@@ -107,7 +107,7 @@ export const gridPaginationRowRangeSelector = createSelectorMemoized(
     visibleSortedRowEntries,
     visibleSortedTopLevelRowEntries,
   ) => {
-    if (!clientSidePaginationEnabled) {
+    if (!clientSidePaginationEnabled || visibleSortedRowEntries.length === 0) {
       return null;
     }
 
