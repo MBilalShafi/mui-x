@@ -1,39 +1,39 @@
 'use client';
 import * as React from 'react';
-import { RefObject } from '@mui/x-internals/types';
+import type { RefObject } from '@mui/x-internals/types';
 import { throttle } from '@mui/x-internals/throttle';
 import debounce from '@mui/utils/debounce';
 import {
   useGridEvent,
   gridSortModelSelector,
   gridFilterModelSelector,
-  GridEventListener,
-  GRID_ROOT_GROUP_ID,
-  GridGroupNode,
-  GridSkeletonRowNode,
-  gridPaginationModelSelector,
-  gridFilteredSortedRowIdsSelector,
-  gridRowIdSelector,
-  GridRowId,
-  GridLeafNode,
-  GridGetRowsResponse,
-  GridDataSourceGroupNode,
-  gridExpandedSortedRowIdsSelector,
   gridRowNodeSelector,
-  gridRowSelector,
+  GRID_ROOT_GROUP_ID,
+  gridPaginationModelSelector,
+  gridRowIdSelector,
   useGridSelector,
+  gridFilteredSortedRowIdsSelector,
+  gridExpandedSortedRowIdsSelector,
+  gridRowSelector,
+  type GridGroupNode,
+  type GridSkeletonRowNode,
+  type GridEventListener,
+  type GridRowId,
+  type GridLeafNode,
+  type GridGetRowsResponse,
+  type GridDataSourceGroupNode,
 } from '@mui/x-data-grid';
 import {
   getVisibleRows,
   GridStrategyGroup,
-  GridStrategyProcessor,
   useGridRegisterStrategyProcessor,
   runIf,
   DataSourceRowsUpdateStrategy,
+  type GridStrategyProcessor,
 } from '@mui/x-data-grid/internals';
-import { GridGetRowsParamsPro as GridGetRowsParams } from '../dataSource/models';
-import { GridPrivateApiPro } from '../../../models/gridApiPro';
-import { DataGridProProcessedProps } from '../../../models/dataGridProProps';
+import type { GridGetRowsParamsPro as GridGetRowsParams } from '../dataSource/models';
+import type { GridPrivateApiPro } from '../../../models/gridApiPro';
+import type { DataGridProProcessedProps } from '../../../models/dataGridProProps';
 import { findSkeletonRowsSection } from '../lazyLoader/utils';
 import { GRID_SKELETON_ROW_ROOT_ID } from '../lazyLoader/useGridLazyLoaderPreProcessors';
 
@@ -79,7 +79,6 @@ export const useGridDataSourceNestedLazyLoader = (
     privateApiRef.current.setStrategyAvailability(
       GridStrategyGroup.DataSource,
       DataSourceRowsUpdateStrategy.LazyLoadedGroupedData,
-      // TODO: Accommodate row grouping
       props.dataSource && props.lazyLoading && isNestedLazyLoadingEnabled
         ? () => true
         : () => false,
