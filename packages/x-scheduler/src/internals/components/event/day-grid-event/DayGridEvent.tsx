@@ -18,11 +18,10 @@ import { useEventCalendarStoreContext } from '@mui/x-scheduler-headless/use-even
 import { eventCalendarViewSelectors } from '@mui/x-scheduler-headless/event-calendar-selectors';
 import { DayGridEventProps } from './DayGridEvent.types';
 import { isOccurrenceAllDayOrMultipleDay } from '../../../utils/event-utils';
-import { useTranslations } from '../../../utils/TranslationsContext';
 import { EventDragPreview } from '../../../components/event-drag-preview';
 import { useFormatTime } from '../../../hooks/useFormatTime';
 import { getPaletteVariants, PaletteName } from '../../../utils/tokens';
-import { useEventCalendarClasses } from '../../../../event-calendar/EventCalendarClassesContext';
+import { useEventCalendarStyledContext } from '../../../../event-calendar/EventCalendarStyledContext';
 import { eventCalendarClasses } from '../../../../event-calendar/eventCalendarClasses';
 
 const DayGridEventBaseStyles = (theme: any) => ({
@@ -36,7 +35,6 @@ const DayGridEventBaseStyles = (theme: any) => ({
   gridRow: 'var(--grid-row)',
   gridColumn: 1,
   padding: `0 ${theme.spacing(0.5)}`,
-  boxSizing: 'border-box',
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1),
@@ -244,9 +242,8 @@ export const DayGridEvent = React.forwardRef(function DayGridEvent(
   const { occurrence, variant, style: styleProp, className, ...other } = props;
 
   // Context hooks
-  const translations = useTranslations();
+  const { classes, localeText } = useEventCalendarStyledContext();
   const store = useEventCalendarStoreContext();
-  const classes = useEventCalendarClasses();
 
   // Selector hooks
   const isDraggable = useStore(store, schedulerEventSelectors.isDraggable, occurrence.id);
@@ -299,8 +296,8 @@ export const DayGridEvent = React.forwardRef(function DayGridEvent(
               role="img"
               aria-label={
                 resource?.title
-                  ? translations.resourceAriaLabel(resource.title)
-                  : translations.noResourceAriaLabel
+                  ? localeText.resourceAriaLabel(resource.title)
+                  : localeText.noResourceAriaLabel
               }
             />
             <DayGridEventLinesClamp
@@ -336,7 +333,7 @@ export const DayGridEvent = React.forwardRef(function DayGridEvent(
     occurrence.displayTimezone.end.value,
     isRecurring,
     resource?.title,
-    translations,
+    localeText,
     formatTime,
     classes,
   ]);
