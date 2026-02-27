@@ -18,17 +18,13 @@ const STOCKS = [
 
 const ROW_COUNT = 40;
 const REVALIDATION_TICK_MS = 2_000;
-let DISABLE_CHANCE_RANDOM;
-const useStaticTick =
-  typeof DISABLE_CHANCE_RANDOM !== 'undefined' && DISABLE_CHANCE_RANDOM;
 
 const basePrices = {};
 STOCKS.forEach((stock, index) => {
   basePrices[stock.symbol] = 60 + ((index * 113 + 17) % 300);
 });
 
-const getTick = () =>
-  useStaticTick ? 0 : Math.floor(Date.now() / REVALIDATION_TICK_MS);
+const getTick = () => Math.floor(Date.now() / REVALIDATION_TICK_MS);
 
 function getDeterministicUnitValue(index, tick, salt) {
   const seed = (index + 1) * 1_000_003 + (tick + 1) * 97_409 + salt * 17_761;
@@ -102,12 +98,12 @@ const columns = [
   },
 ];
 
-function fakeStockServer(params) {
+function fakeStockServer(params, isInitialized = false) {
   const page = params.paginationModel?.page ?? 0;
   const pageSize = params.paginationModel?.pageSize ?? 5;
   const start = page * pageSize;
   const end = Math.min(start + pageSize, ROW_COUNT);
-  const tick = getTick();
+  const tick = isInitialized ? getTick() : 0;
 
   const rows = [];
   for (let index = start; index < end; index += 1) {
@@ -127,20 +123,19 @@ function fakeStockServer(params) {
   }
 
   return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        rows,
-        rowCount: ROW_COUNT,
-      });
-    }, 120);
+    resolve({
+      rows,
+      rowCount: ROW_COUNT,
+    });
   });
 }
 
 export default function ServerSideDataGridRevalidation() {
+  const isInitialized = React.useRef(false);
   const dataSource = React.useMemo(
     () => ({
       getRows: async (params) => {
-        const response = await fakeStockServer(params);
+        const response = await fakeStockServer(params, isInitialized.current);
 
         return {
           rows: response.rows,
@@ -150,6 +145,10 @@ export default function ServerSideDataGridRevalidation() {
     }),
     [],
   );
+
+  React.useEffect(() => {
+    isInitialized.current = true;
+  }, []);
 
   return (
     <div style={{ width: '100%', height: 360 }}>

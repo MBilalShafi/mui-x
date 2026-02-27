@@ -49,9 +49,6 @@ const STOCKS = [
 
 const ROW_COUNT = 30;
 const REVALIDATION_TICK_MS = 3_000;
-let DISABLE_CHANCE_RANDOM: any;
-const useStaticTick =
-  typeof DISABLE_CHANCE_RANDOM !== 'undefined' && DISABLE_CHANCE_RANDOM;
 
 interface StockRow {
   id: number;
@@ -69,8 +66,7 @@ STOCKS.forEach((stock, i) => {
   basePrices[stock.symbol] = 50 + ((i * 137 + 43) % 400);
 });
 
-const getTick = () =>
-  useStaticTick ? 0 : Math.floor(Date.now() / REVALIDATION_TICK_MS);
+const getTick = () => Math.floor(Date.now() / REVALIDATION_TICK_MS);
 
 function getDeterministicUnitValue(index: number, tick: number, salt: number) {
   const seed = (index + 1) * 1_000_003 + (tick + 1) * 97_409 + salt * 17_761;
@@ -80,10 +76,10 @@ function getDeterministicUnitValue(index: number, tick: number, salt: number) {
 
 // A simple fake server that returns stock rows with fluctuating prices.
 // Each call returns slightly different prices to simulate real-time market data.
-function fakeStockServer(params: GridGetRowsParams) {
+function fakeStockServer(params: GridGetRowsParams, isInitialized = false) {
   const start = typeof params.start === 'number' ? params.start : 0;
   const end = typeof params.end === 'number' ? params.end : start + 14;
-  const tick = getTick();
+  const tick = isInitialized ? getTick() : 0;
 
   const rows: StockRow[] = [];
   for (let i = start; i <= end && i < ROW_COUNT; i += 1) {
@@ -109,7 +105,7 @@ function fakeStockServer(params: GridGetRowsParams) {
   }
 
   return new Promise<{ rows: StockRow[]; rowCount: number }>((resolve) => {
-    setTimeout(() => resolve({ rows, rowCount: ROW_COUNT }), 50);
+    resolve({ rows, rowCount: ROW_COUNT });
   });
 }
 
@@ -242,11 +238,12 @@ const columns: GridColDef<StockRow>[] = [
 function ServerSideLazyLoadingRevalidation() {
   const apiRef = useGridApiRef();
   const [useCache, setUseCache] = React.useState(false);
+  const isInitialized = React.useRef(false);
 
   const dataSource: GridDataSource = React.useMemo(
     () => ({
       getRows: async (params: GridGetRowsParams) => {
-        const response = await fakeStockServer(params);
+        const response = await fakeStockServer(params, isInitialized.current);
 
         return {
           rows: response.rows,
@@ -256,6 +253,10 @@ function ServerSideLazyLoadingRevalidation() {
     }),
     [],
   );
+
+  React.useEffect(() => {
+    isInitialized.current = true;
+  }, []);
 
   return (
     <Stack sx={{ width: '100%' }} spacing={1}>
