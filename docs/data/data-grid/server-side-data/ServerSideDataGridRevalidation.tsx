@@ -31,11 +31,24 @@ const STOCKS = [
 ];
 
 const ROW_COUNT = 40;
+const REVALIDATION_TICK_MS = 2_000;
+declare const DISABLE_CHANCE_RANDOM: any;
+const useStaticTick =
+  typeof DISABLE_CHANCE_RANDOM !== 'undefined' && DISABLE_CHANCE_RANDOM;
 
 const basePrices: Record<string, number> = {};
 STOCKS.forEach((stock, index) => {
   basePrices[stock.symbol] = 60 + ((index * 113 + 17) % 300);
 });
+
+const getTick = () =>
+  useStaticTick ? 0 : Math.floor(Date.now() / REVALIDATION_TICK_MS);
+
+function getDeterministicUnitValue(index: number, tick: number, salt: number) {
+  const seed = (index + 1) * 1_000_003 + (tick + 1) * 97_409 + salt * 17_761;
+  const hashed = Math.sin(seed) * 10_000;
+  return hashed - Math.floor(hashed);
+}
 
 function FlashOnChange({
   children,
@@ -118,19 +131,22 @@ function fakeStockServer(params: GridGetRowsParams) {
   const pageSize = params.paginationModel?.pageSize ?? 5;
   const start = page * pageSize;
   const end = Math.min(start + pageSize, ROW_COUNT);
+  const tick = getTick();
 
   const rows: StockRow[] = [];
   for (let index = start; index < end; index += 1) {
     const stock = STOCKS[index % STOCKS.length];
     const basePrice = basePrices[stock.symbol];
-    const priceFluctuation = 1 + (Math.random() - 0.5) * 0.03;
+    const priceNoise = getDeterministicUnitValue(index, tick, 1);
+    const volumeNoise = getDeterministicUnitValue(index, tick, 2);
+    const priceFluctuation = 1 + (priceNoise - 0.5) * 0.03;
 
     rows.push({
       id: index,
       symbol: stock.symbol,
       company: stock.company,
       price: Math.round(basePrice * priceFluctuation * 100) / 100,
-      volume: Math.floor(500_000 + Math.random() * 20_000_000),
+      volume: Math.floor(500_000 + volumeNoise * 20_000_000),
     });
   }
 

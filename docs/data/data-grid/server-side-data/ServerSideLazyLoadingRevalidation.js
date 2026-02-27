@@ -41,6 +41,9 @@ const STOCKS = [
 ];
 
 const ROW_COUNT = 30;
+const REVALIDATION_TICK_MS = 3_000;
+const useStaticTick =
+  typeof DISABLE_CHANCE_RANDOM !== 'undefined' && DISABLE_CHANCE_RANDOM;
 
 // Generate base prices for each stock (deterministic)
 const basePrices = {};
@@ -48,22 +51,33 @@ STOCKS.forEach((stock, i) => {
   basePrices[stock.symbol] = 50 + ((i * 137 + 43) % 400);
 });
 
+const getTick = () =>
+  useStaticTick ? 0 : Math.floor(Date.now() / REVALIDATION_TICK_MS);
+
+function getDeterministicUnitValue(index, tick, salt) {
+  const seed = (index + 1) * 1_000_003 + (tick + 1) * 97_409 + salt * 17_761;
+  const hashed = Math.sin(seed) * 10_000;
+  return hashed - Math.floor(hashed);
+}
+
 // A simple fake server that returns stock rows with fluctuating prices.
 // Each call returns slightly different prices to simulate real-time market data.
 function fakeStockServer(params) {
   const start = typeof params.start === 'number' ? params.start : 0;
   const end = typeof params.end === 'number' ? params.end : start + 14;
+  const tick = getTick();
 
   const rows = [];
   for (let i = start; i <= end && i < ROW_COUNT; i += 1) {
     const stock = STOCKS[i % STOCKS.length];
     const base = basePrices[stock.symbol];
-    // Random fluctuation ±2% on each call
-    const fluctuation = 1 + (Math.random() - 0.5) * 0.04;
+    const priceNoise = getDeterministicUnitValue(i, tick, 1);
+    const volumeNoise = getDeterministicUnitValue(i, tick, 2);
+    const fluctuation = 1 + (priceNoise - 0.5) * 0.04;
     const price = Math.round(base * fluctuation * 100) / 100;
     const change = Math.round((price - base) * 100) / 100;
     const changePercent = Math.round((change / base) * 10000) / 100;
-    const volume = Math.floor(1_000_000 + Math.random() * 50_000_000);
+    const volume = Math.floor(1_000_000 + volumeNoise * 50_000_000);
 
     rows.push({
       id: i,
