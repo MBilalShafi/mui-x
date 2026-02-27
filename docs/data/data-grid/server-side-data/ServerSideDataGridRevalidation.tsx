@@ -32,7 +32,7 @@ const STOCKS = [
 
 const ROW_COUNT = 40;
 const REVALIDATION_TICK_MS = 2_000;
-declare const DISABLE_CHANCE_RANDOM: any;
+let DISABLE_CHANCE_RANDOM: any;
 const useStaticTick =
   typeof DISABLE_CHANCE_RANDOM !== 'undefined' && DISABLE_CHANCE_RANDOM;
 
